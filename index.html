@@ -131,8 +131,15 @@ function consultar(){
      codigo: codigoInput
    })
  })
- .then(r => r.json())
+ .then(async (r) => {
+   const text = await r.text();   // 🔥 FIX PRINCIPAL
+   console.log("RAW RESPONSE:", text);
+
+   return JSON.parse(text);
+ })
  .then(res => {
+
+   console.log("PARSED:", res);
 
    if(res.status === "INVALIDO"){
      mostrar("❌ Ingresso inválido");
@@ -154,7 +161,7 @@ function consultar(){
 
  })
  .catch(err=>{
-   console.log(err);
+   console.log("ERRO REAL:", err);
    mostrar("❌ erro de conexão");
  });
 
@@ -183,7 +190,12 @@ function confirmar(){
      operador: operador
    })
  })
- .then(r => r.json())
+ .then(async (r) => {
+   const text = await r.text();   // 🔥 FIX PRINCIPAL
+   console.log("RAW RESPONSE:", text);
+
+   return JSON.parse(text);
+ })
  .then(res => {
 
    if(res.status === "OK"){
@@ -200,7 +212,7 @@ function confirmar(){
 
  })
  .catch(err=>{
-   console.log(err);
+   console.log("ERRO REAL:", err);
    mostrar("❌ erro servidor");
  });
 

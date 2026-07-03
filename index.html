@@ -115,36 +115,39 @@ function validar(code){
 
 mostrar("⏳ Verificando...");
 
-fetch(API + "?codigo=" + encodeURIComponent(code))
-.then(async (res) => {
+fetch("https://SEU_WORKER.workers.dev/?codigo=" + code)
+.then(r => r.json())
+.then(res => {
 
-const text = await res.text();
+  if(res.status === "OK"){
+    mostrar("🟢 LIBERADO");
+  }
 
-let json;
+  if(res.status === "NEGADO"){
+    mostrar("🔴 JÁ ENTROU");
+  }
 
-try {
-json = JSON.parse(text);
-} catch(e){
-mostrar("❌ Resposta inválida do servidor");
-return;
-}
+  if(res.status === "INVALIDO"){
+    mostrar("❌ INVÁLIDO");
+  }
 
-if(json.status === "OK"){
-mostrar("🟢 LIBERADO<br>" + json.nome);
-
-}else if(json.status === "NEGADO"){
-mostrar("🔴 JÁ ENTROU");
-
-}else{
-mostrar("❌ INVÁLIDO");
-}
-
-})
-.catch(err => {
-console.log(err);
-mostrar("❌ Erro de conexão com servidor");
 });
+.then(r => r.json())
+.then(res => {
 
+  if(res.status === "OK"){
+    mostrar("🟢 LIBERADO");
+  }
+
+  if(res.status === "NEGADO"){
+    mostrar("🔴 JÁ ENTROU");
+  }
+
+  if(res.status === "INVALIDO"){
+    mostrar("❌ INVÁLIDO");
+  }
+
+});
 }
 
 </script>

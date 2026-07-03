@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+ margin:0;
+ font-family:Arial;
+ min-height:100vh;
+ background:linear-gradient(135deg,#f7e66a,#5ed67a);
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ padding:20px;
+}
+
+.card{
+ width:100%;
+ max-width:550px;
+ background:white;
+ border-radius:25px;
+ padding:25px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.2);
+ text-align:center;
+}
+
+input,button,select{
+ width:100%;
+ padding:18px;
+ font-size:20px;
+ margin-top:12px;
+ border-radius:14px;
+ border:1px solid #ccc;
+ box-sizing:border-box;
+}
+
+button{
+ border:none;
+ font-weight:bold;
+ cursor:pointer;
+}
+
+.primary{
+ background:#24b35c;
+ color:white;
+}
+
+.secondary{
+ background:#ffd54a;
+}
+
+#preview{
+ margin-top:25px;
+ font-size:22px;
+ font-weight:bold;
+}
+
+.nome{
+ font-size:32px;
+ margin-top:20px;
+ color:#222;
+}
+
+#video{
+ width:100%;
+ margin-top:20px;
+ border-radius:18px;
+ display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+<h1>🎟️ Check-in</h1>
+
+<select id="operador">
+<option value="">Quem é o operador?</option>
+<option>Drielle Lins</option>
+<option>Efraim Alves</option>
+<option>Eric Daniel</option>
+<option>Janine Silva</option>
+<option>João Otávio</option>
+<option>Lara Borges</option>
+</select>
+
+<input id="codigo" placeholder="Código do ingresso">
+
+<button class="secondary" onclick="abrirCamera()">📷 Escanear QR</button>
+<button class="primary" onclick="consultar()">Buscar ingresso</button>
+
+<video id="video" autoplay playsinline></video>
+
+<div id="preview"></div>
+</div>
+
+<script>
+
+const API_URL = "https://script.google.com/macros/s/AKfycbwxok7oB1YSPcT0W0EUVwv0S8Z0jGqSEOOZywAN2tcFjhetV3BdXe4dw1BwWBZvrAtjuw/exec";
+
+let codigoAtual = null;
+let stream = null;
+
+function mostrar(html){
+ document.getElementById("preview").innerHTML = html;
+}
+
+// ======================
+// CONSULTA INGRESSO
+// ======================
+function consultar(){
+
+ const codigoInput = document.getElementById("codigo").value.trim();
+
+ if(!codigoInput){
+   mostrar("Digite um código");
+   return;
+ }
+
+ mostrar("⏳ Buscando...");
+
+ fetch(API_URL, {
+   method: "POST",
+   headers: {
+     "Content-Type": "application/json"
+   },
+   body: JSON.stringify({
+     acao: "consultar",
+     codigo: codigoInput
+   })
+ })
+ .then(r => r.json())
+ .then(res => {
+
+   if(res.status === "INVALIDO"){
+     mostrar("❌ Ingresso inválido");
+     return;
+   }
+
+   if(res.entrou){
+     mostrar("🔴 Já entrou<br><div class='nome'>"+res.nome+"</div>");
+     return;
+   }
+
+   codigoAtual = res.codigo;
+
+   mostrar(`
+     <div>CONFIRA O NOME</div>
+     <div class="nome">${res.nome}</div>
+     <button class="primary" onclick="confirmar()">LIBERAR ENTRADA</button>
+   `);
+
+ })
+ .catch(err=>{
+   console.log(err);
+   mostrar("❌ erro de conexão");
+ });
+
+}
+
+// ======================
+// CONFIRMAR CHECK-IN
+// ======================
+function confirmar(){
+
+ const operador = document.getElementById("operador").value;
+
+ if(!operador){
+   mostrar("Selecione operador");
+   return;
+ }
+
+ fetch(API_URL, {
+   method: "POST",
+   headers: {
+     "Content-Type": "application/json"
+   },
+   body: JSON.stringify({
+     acao: "confirmar",
+     codigo: codigoAtual,
+     operador: operador
+   })
+ })
+ .then(r => r.json())
+ .then(res => {
+
+   if(res.status === "OK"){
+     mostrar(`
+      🟢 LIBERADO
+      <div class="nome">${res.nome}</div>
+      <div>Entrada: ${res.horario}</div>
+     `);
+   } else if(res.status === "NEGADO"){
+     mostrar("🔴 Já entrou<br>"+res.nome);
+   } else {
+     mostrar("❌ Erro");
+   }
+
+ })
+ .catch(err=>{
+   console.log(err);
+   mostrar("❌ erro servidor");
+ });
+
+}
+
+// ======================
+// CÂMERA (QR)
+// ======================
+async function abrirCamera(){
+
+ try{
+   stream = await navigator.mediaDevices.getUserMedia({
+     video:{facingMode:"environment"}
+   });
+
+   const video = document.getElementById("video");
+   video.style.display="block";
+   video.srcObject = stream;
+
+   if("BarcodeDetector" in window){
+
+     const detector = new BarcodeDetector({
+       formats:["qr_code"]
+     });
+
+     scanLoop(detector, video);
+
+   } else {
+     mostrar("⚠️ Seu navegador não suporta scanner automático. Use digitação.");
+   }
+
+ }catch(err){
+   console.log(err);
+   mostrar("⚠️ câmera indisponível");
+ }
+
+}
+
+// ======================
+// LOOP QR
+// ======================
+async function scanLoop(detector, video){
+
+ try{
+   const codes = await detector.detect(video);
+
+   if(codes.length){
+     const code = codes[0].rawValue;
+
+     document.getElementById("codigo").value = code;
+
+     if(stream){
+       stream.getTracks().forEach(t=>t.stop());
+     }
+
+     document.getElementById("video").style.display="none";
+
+     consultar();
+     return;
+   }
+
+ }catch(e){}
+
+ requestAnimationFrame(()=>scanLoop(detector,video));
+}
+
+</script>
+
+</body>
+</html>

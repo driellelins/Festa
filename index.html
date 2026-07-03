@@ -136,29 +136,34 @@ function validar(code){
 
 mostrar("⏳ Verificando...");
 
-fetch(API + "?codigo=" + encodeURIComponent(code))
-.then(r => r.json())
-.then(res => {
+fetch(API + "?codigo=" + encodeURIComponent(code), {
+  method: "GET",
+  redirect: "follow"
+})
+.then(async (res) => {
 
-if(res.status === "OK"){
+  const text = await res.text();
 
-mostrar("🟢 LIBERADO<br>" + res.nome);
+  try {
+    const json = JSON.parse(text);
 
-}else if(res.status === "NEGADO"){
+    if(json.status === "OK"){
+      mostrar("🟢 LIBERADO<br>" + json.nome);
+    } 
+    else if(json.status === "NEGADO"){
+      mostrar("🔴 JÁ ENTROU");
+    } 
+    else {
+      mostrar("❌ INVÁLIDO");
+    }
 
-mostrar("🔴 JÁ ENTROU");
-
-}else{
-
-mostrar("❌ INVÁLIDO");
-
-}
+  } catch(e){
+    mostrar("❌ Erro resposta API");
+  }
 
 })
 .catch(err => {
-
-mostrar("Erro na conexão");
-
+  mostrar("❌ Erro de conexão com servidor");
 });
 
 }

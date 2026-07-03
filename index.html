@@ -2,24 +2,35 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
+
 body{
 font-family:Arial;
 text-align:center;
 padding:20px;
 }
 
-#reader{
-width:100%;
+input{
+width:95%;
+padding:15px;
+font-size:18px;
+margin-top:10px;
 }
 
 button{
+width:95%;
 padding:15px;
-width:100%;
 font-size:18px;
 margin-top:10px;
+}
+
+#reader{
+width:100%;
+margin-top:20px;
+display:none;
 }
 
 #box{
@@ -27,6 +38,7 @@ margin-top:20px;
 font-size:20px;
 font-weight:bold;
 }
+
 </style>
 
 </head>
@@ -35,7 +47,13 @@ font-weight:bold;
 
 <h2>🎟️ Check-in Festa</h2>
 
-<button onclick="start()">📷 Abrir câmera</button>
+<!-- 🔹 DIGITAÇÃO MANUAL -->
+<input id="codigo" placeholder="Digite o código">
+
+<button onclick="validarManual()">✔ Validar manual</button>
+
+<!-- 🔹 ABRIR CÂMERA -->
+<button onclick="startCamera()">📷 Escanear QR</button>
 
 <div id="reader"></div>
 
@@ -43,21 +61,49 @@ font-weight:bold;
 
 <script>
 
-const API = "https://script.google.com/macros/s/AKfycbwxok7oB1YSPcT0W0EUVwv0S8Z0jGqSEOOZywAN2tcFjhetV3BdXe4dw1BwWBZvrAtjuw/exec";
+const API = "COLE_AQUI_SUA_URL_DO_SCRIPT";
 
-function start(){
+function mostrar(msg){
+document.getElementById("box").innerHTML = msg;
+}
+
+// ======================
+// MANUAL
+// ======================
+function validarManual(){
+
+const code = document.getElementById("codigo").value;
+
+validar(code);
+
+}
+
+// ======================
+// CÂMERA
+// ======================
+function startCamera(){
+
+document.getElementById("reader").style.display = "block";
 
 const qr = new Html5Qrcode("reader");
 
 Html5Qrcode.getCameras().then(devices => {
 
+const cameraId = devices[0].id;
+
+// ⚠️ força câmera traseira
 qr.start(
-devices[0].id,
-{ fps: 10, qrbox: 250 },
+cameraId,
+{
+fps:10,
+qrbox:250
+},
 
 (text) => {
 
 qr.stop();
+
+document.getElementById("codigo").value = text;
 
 validar(text);
 
@@ -69,28 +115,35 @@ validar(text);
 
 }
 
+// ======================
+// CHAMADA API
+// ======================
 function validar(code){
 
-fetch(API + "?codigo=" + code)
+mostrar("⏳ Verificando...");
+
+fetch(API + "?codigo=" + encodeURIComponent(code))
 .then(r => r.json())
 .then(res => {
 
 if(res.status === "OK"){
 
-document.getElementById("box").innerHTML =
-"🟢 LIBERADO<br>" + res.nome;
+mostrar("🟢 LIBERADO<br>" + res.nome);
 
 }else if(res.status === "NEGADO"){
 
-document.getElementById("box").innerHTML =
-"🔴 JÁ ENTROU";
+mostrar("🔴 JÁ ENTROU");
 
 }else{
 
-document.getElementById("box").innerHTML =
-"❌ INVÁLIDO";
+mostrar("❌ INVÁLIDO");
 
 }
+
+})
+.catch(err => {
+
+mostrar("Erro na conexão");
 
 });
 

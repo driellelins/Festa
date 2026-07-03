@@ -136,34 +136,37 @@ function validar(code){
 
 mostrar("⏳ Verificando...");
 
-fetch(API + "?codigo=" + encodeURIComponent(code), {
-  method: "GET",
-  redirect: "follow"
-})
-.then(async (res) => {
+const url = API + "?codigo=" + encodeURIComponent(code);
 
-  const text = await res.text();
+fetch(url)
+.then(response => response.text())
+.then(text => {
 
-  try {
-    const json = JSON.parse(text);
+console.log(text);
 
-    if(json.status === "OK"){
-      mostrar("🟢 LIBERADO<br>" + json.nome);
-    } 
-    else if(json.status === "NEGADO"){
-      mostrar("🔴 JÁ ENTROU");
-    } 
-    else {
-      mostrar("❌ INVÁLIDO");
-    }
+let res;
 
-  } catch(e){
-    mostrar("❌ Erro resposta API");
-  }
+try {
+res = JSON.parse(text);
+} catch (e) {
+mostrar("❌ Resposta inválida do servidor");
+return;
+}
+
+if(res.status === "OK"){
+mostrar("🟢 LIBERADO<br>" + res.nome);
+
+} else if(res.status === "NEGADO"){
+mostrar("🔴 JÁ ENTROU");
+
+} else {
+mostrar("❌ INVÁLIDO");
+}
 
 })
 .catch(err => {
-  mostrar("❌ Erro de conexão com servidor");
+mostrar("❌ Erro de conexão com servidor");
+console.log(err);
 });
 
 }

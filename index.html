@@ -61,7 +61,7 @@ font-weight:bold;
 
 <script>
 
-const API = "COLE_AQUI_SUA_URL_DO_SCRIPT";
+const API = "https://script.google.com/macros/s/AKfycbwxok7oB1YSPcT0W0EUVwv0S8Z0jGqSEOOZywAN2tcFjhetV3BdXe4dw1BwWBZvrAtjuw/exec";
 
 function mostrar(msg){
 document.getElementById("box").innerHTML = msg;
@@ -89,16 +89,30 @@ const qr = new Html5Qrcode("reader");
 
 Html5Qrcode.getCameras().then(devices => {
 
-const cameraId = devices[0].id;
+let cameraId = null;
 
-// ⚠️ força câmera traseira
+// 🔥 procurar câmera traseira
+devices.forEach(device => {
+  if (
+    device.label.toLowerCase().includes("back") ||
+    device.label.toLowerCase().includes("traseira") ||
+    device.label.toLowerCase().includes("environment")
+  ) {
+    cameraId = device.id;
+  }
+});
+
+// fallback
+if (!cameraId) {
+  cameraId = devices[0].id;
+}
+
 qr.start(
 cameraId,
 {
 fps:10,
 qrbox:250
 },
-
 (text) => {
 
 qr.stop();

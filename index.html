@@ -122,15 +122,13 @@ function consultar(){
  mostrar("⏳ Buscando...");
 
  fetch(API_URL, {
-   method: "POST",
-   headers: {
-     "Content-Type": "application/json"
-   },
-   body: JSON.stringify({
-     acao: "consultar",
-     codigo: codigoInput
-   })
- })
+  method: "POST",
+  body: JSON.stringify({
+    acao: "consultar",
+    codigo: codigoInput
+  })
+})
+  
 .then(async (r) => {
   const text = await r.text();
   console.log("RAW:", text);
@@ -189,12 +187,11 @@ function confirmar(){
      operador: operador
    })
  })
- .then(async (r) => {
-   const text = await r.text();   // 🔥 FIX PRINCIPAL
-   console.log("RAW RESPONSE:", text);
-
-   return JSON.parse(text);
- })
+.then(async (r) => {
+  const text = await r.text();
+  console.log("RAW:", text);
+  return JSON.parse(text);
+})
  .then(res => {
 
    if(res.status === "OK"){

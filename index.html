@@ -131,12 +131,11 @@ function consultar(){
      codigo: codigoInput
    })
  })
- .then(async (r) => {
-   const text = await r.text();   // 🔥 FIX PRINCIPAL
-   console.log("RAW RESPONSE:", text);
-
-   return JSON.parse(text);
- })
+.then(async (r) => {
+  const text = await r.text();
+  console.log("RAW:", text);
+  return JSON.parse(text);
+})
  .then(res => {
 
    console.log("PARSED:", res);

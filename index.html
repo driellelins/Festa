@@ -1,1 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://unpkg.com/html5-qrcode"></script>
 
+<style>
+body{
+font-family:Arial;
+text-align:center;
+padding:20px;
+}
+
+#reader{
+width:100%;
+}
+
+button{
+padding:15px;
+width:100%;
+font-size:18px;
+margin-top:10px;
+}
+
+#box{
+margin-top:20px;
+font-size:20px;
+font-weight:bold;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>🎟️ Check-in Festa</h2>
+
+<button onclick="start()">📷 Abrir câmera</button>
+
+<div id="reader"></div>
+
+<div id="box"></div>
+
+<script>
+
+const API = "https://script.google.com/macros/s/AKfycbwxok7oB1YSPcT0W0EUVwv0S8Z0jGqSEOOZywAN2tcFjhetV3BdXe4dw1BwWBZvrAtjuw/exec";
+
+function start(){
+
+const qr = new Html5Qrcode("reader");
+
+Html5Qrcode.getCameras().then(devices => {
+
+qr.start(
+devices[0].id,
+{ fps: 10, qrbox: 250 },
+
+(text) => {
+
+qr.stop();
+
+validar(text);
+
+}
+
+);
+
+});
+
+}
+
+function validar(code){
+
+fetch(API + "?codigo=" + code)
+.then(r => r.json())
+.then(res => {
+
+if(res.status === "OK"){
+
+document.getElementById("box").innerHTML =
+"🟢 LIBERADO<br>" + res.nome;
+
+}else if(res.status === "NEGADO"){
+
+document.getElementById("box").innerHTML =
+"🔴 JÁ ENTROU";
+
+}else{
+
+document.getElementById("box").innerHTML =
+"❌ INVÁLIDO";
+
+}
+
+});
+
+}
+
+</script>
+
+</body>
+</html>

@@ -78,12 +78,18 @@ button{
 
 <select id="operador">
 <option value="">Quem é o operador?</option>
+<option>Adriana Barbosa</option>
 <option>Drielle Lins</option>
 <option>Efraim Alves</option>
 <option>Eric Daniel</option>
+<option>Ingrid Sanny</option>
 <option>Janine Silva</option>
+<option>Jeslane Barreto</option>
 <option>João Otávio</option>
 <option>Lara Borges</option>
+<option>Maria Vitória</option>
+<option>Nivia Pires</option>
+<option>Yasmin Souza</option>
 </select>
 
 <input id="codigo" placeholder="Código do ingresso">
@@ -179,7 +185,7 @@ function confirmar(event){
  const operador = document.getElementById("operador").value;
 
  if(!operador){
-   mostrar("Selecione operador");
+   mostrar("⚠️ Selecione o operador antes de liberar a entrada");
    return;
  }
 

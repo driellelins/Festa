@@ -74,7 +74,7 @@ button{
 <body>
 
 <div class="card">
-<h1>🎟️Check-in</h1>
+<h1>🎟️ Check-in</h1>
 
 <select id="operador">
 <option value="">Quem é o operador?</option>
@@ -103,12 +103,15 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwxok7oB1YSPcT0W0EUVwv0
 let codigoAtual = null;
 let stream = null;
 
+// ======================
+// UI
+// ======================
 function mostrar(html){
  document.getElementById("preview").innerHTML = html;
 }
 
 // ======================
-// CONSULTA INGRESSO
+// CONSULTA
 // ======================
 function consultar(){
 
@@ -122,28 +125,32 @@ function consultar(){
  mostrar("⏳ Buscando...");
 
  fetch(API_URL, {
-  method: "POST",
-  body: JSON.stringify({
-    acao: "consultar",
-    codigo: codigoInput
-  })
-})
-  
-.then(async (r) => {
-  const text = await r.text();
-  console.log("RAW:", text);
-  return JSON.parse(text);
-})
+   method: "POST",
+   body: JSON.stringify({
+     acao: "consultar",
+     codigo: codigoInput
+   })
+ })
+ .then(async (r) => {
+   const text = await r.text();
+   console.log("RAW:", text);
+   return JSON.parse(text);
+ })
  .then(res => {
 
-   console.log("PARSED:", res);
+   console.log("RES:", res);
 
    if(res.status === "INVALIDO"){
      mostrar("❌ Ingresso inválido");
      return;
    }
 
-   if(res.entrou){
+   if(!res.nome){
+     mostrar("❌ Erro ao carregar ingresso");
+     return;
+   }
+
+   if(res.entrou === true){
      mostrar("🔴 Já entrou<br><div class='nome'>"+res.nome+"</div>");
      return;
    }
@@ -153,7 +160,7 @@ function consultar(){
    mostrar(`
      <div>CONFIRA O NOME</div>
      <div class="nome">${res.nome}</div>
-     <button class="primary" onclick="confirmar()">LIBERAR ENTRADA</button>
+     <button class="primary" onclick="confirmar(event)">LIBERAR ENTRADA</button>
    `);
 
  })
@@ -165,9 +172,9 @@ function consultar(){
 }
 
 // ======================
-// CONFIRMAR CHECK-IN
+// CONFIRMAR
 // ======================
-function confirmar(){
+function confirmar(event){
 
  const operador = document.getElementById("operador").value;
 
@@ -176,23 +183,27 @@ function confirmar(){
    return;
  }
 
+ const btn = event?.target;
+ if(btn) btn.disabled = true;
+
+ mostrar("⏳ Liberando entrada...");
+
  fetch(API_URL, {
    method: "POST",
-   headers: {
-     "Content-Type": "application/json"
-   },
    body: JSON.stringify({
      acao: "confirmar",
      codigo: codigoAtual,
      operador: operador
    })
  })
-.then(async (r) => {
-  const text = await r.text();
-  console.log("RAW:", text);
-  return JSON.parse(text);
-})
+ .then(async (r) => {
+   const text = await r.text();
+   console.log("RAW:", text);
+   return JSON.parse(text);
+ })
  .then(res => {
+
+   console.log(res);
 
    if(res.status === "OK"){
      mostrar(`
@@ -200,22 +211,32 @@ function confirmar(){
       <div class="nome">${res.nome}</div>
       <div>Entrada: ${res.horario}</div>
      `);
-   } else if(res.status === "NEGADO"){
-     mostrar("🔴 Já entrou<br>"+res.nome);
-   } else {
-     mostrar("❌ Erro");
+   }
+
+   else if(res.status === "NEGADO"){
+     mostrar(`
+      🔴 JÁ ENTROU
+      <div class="nome">${res.nome}</div>
+     `);
+   }
+
+   else {
+     mostrar("❌ Erro servidor");
    }
 
  })
  .catch(err=>{
    console.log("ERRO REAL:", err);
-   mostrar("❌ erro servidor");
+   mostrar("❌ erro de conexão");
+ })
+ .finally(()=>{
+   if(btn) btn.disabled = false;
  });
 
 }
 
 // ======================
-// CÂMERA (QR)
+// CÂMERA
 // ======================
 async function abrirCamera(){
 
@@ -231,13 +252,13 @@ async function abrirCamera(){
    if("BarcodeDetector" in window){
 
      const detector = new BarcodeDetector({
-       formats:["qr_code"]
+       formats:["qr_code","code_128","ean_13"]
      });
 
      scanLoop(detector, video);
 
    } else {
-     mostrar("⚠️ Seu navegador não suporta scanner automático. Use digitação.");
+     mostrar("⚠️ Scanner não suportado neste aparelho");
    }
 
  }catch(err){

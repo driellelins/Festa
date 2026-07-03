@@ -6,7 +6,6 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-
 body{
 font-family:Arial;
 text-align:center;
@@ -38,7 +37,6 @@ margin-top:20px;
 font-size:20px;
 font-weight:bold;
 }
-
 </style>
 
 </head>
@@ -47,12 +45,10 @@ font-weight:bold;
 
 <h2>🎟️ Check-in Festa</h2>
 
-<!-- 🔹 DIGITAÇÃO MANUAL -->
 <input id="codigo" placeholder="Digite o código">
 
 <button onclick="validarManual()">✔ Validar manual</button>
 
-<!-- 🔹 ABRIR CÂMERA -->
 <button onclick="startCamera()">📷 Escanear QR</button>
 
 <div id="reader"></div>
@@ -71,15 +67,12 @@ document.getElementById("box").innerHTML = msg;
 // MANUAL
 // ======================
 function validarManual(){
-
 const code = document.getElementById("codigo").value;
-
 validar(code);
-
 }
 
 // ======================
-// CÂMERA
+// CÂMERA (FORÇADA TRASEIRA)
 // ======================
 function startCamera(){
 
@@ -89,40 +82,26 @@ const qr = new Html5Qrcode("reader");
 
 Html5Qrcode.getCameras().then(devices => {
 
-let cameraId = null;
-
-// 🔥 procurar câmera traseira
-devices.forEach(device => {
-  if (
-    device.label.toLowerCase().includes("back") ||
-    device.label.toLowerCase().includes("traseira") ||
-    device.label.toLowerCase().includes("environment")
-  ) {
-    cameraId = device.id;
-  }
-});
-
-// fallback
-if (!cameraId) {
-  cameraId = devices[0].id;
-}
+let cameraId = devices.find(d =>
+(d.label || "").toLowerCase().includes("back") ||
+(d.label || "").toLowerCase().includes("traseira") ||
+(d.label || "").toLowerCase().includes("environment")
+)?.id || devices[0].id;
 
 qr.start(
 cameraId,
-{
-fps:10,
-qrbox:250
-},
-(text) => {
+{ fps: 10, qrbox: 250 },
+async (text) => {
 
-qr.stop();
+try {
+await qr.stop();
+} catch(e){}
 
 document.getElementById("codigo").value = text;
 
 validar(text);
 
 }
-
 );
 
 });
@@ -130,31 +109,41 @@ validar(text);
 }
 
 // ======================
-// CHAMADA API
+// API (VERSÃO 100% ESTÁVEL)
 // ======================
 function validar(code){
 
 mostrar("⏳ Verificando...");
 
-const url = API + "?codigo=" + encodeURIComponent(code);
+fetch(API + "?codigo=" + encodeURIComponent(code))
+.then(async (res) => {
 
-// cria iframe invisível para evitar CORS
-const iframe = document.createElement("iframe");
-iframe.style.display = "none";
+const text = await res.text();
 
-iframe.src = url;
+let json;
 
-document.body.appendChild(iframe);
+try {
+json = JSON.parse(text);
+} catch(e){
+mostrar("❌ Resposta inválida do servidor");
+return;
+}
 
-// pega resposta via timeout (simples e confiável)
-setTimeout(() => {
+if(json.status === "OK"){
+mostrar("🟢 LIBERADO<br>" + json.nome);
 
-document.body.removeChild(iframe);
+}else if(json.status === "NEGADO"){
+mostrar("🔴 JÁ ENTROU");
 
-// depois disso tenta feedback visual
-mostrar("✔ Código enviado. Verifique resultado na tela.");
+}else{
+mostrar("❌ INVÁLIDO");
+}
 
-}, 1200);
+})
+.catch(err => {
+console.log(err);
+mostrar("❌ Erro de conexão com servidor");
+});
 
 }
 
